@@ -4,6 +4,8 @@ const { isNil, merge, mergeDeepRight, not } = require('ramda')
 const {
   needsUpdate,
   getClients,
+  deleteStack,
+  deleteBucket,
   fetchOutputs,
   constructTemplateS3Key,
   createOrUpdateStack,
@@ -16,7 +18,7 @@ const defaults = {
 
 class AwsCloudFormation extends Component {
   async default(inputs = {}) {
-    this.context.status(`Deploying`)
+    this.context.status('Deploying')
     const config = mergeDeepRight(defaults, inputs)
     config.externalBucket = not(isNil(config.bucket))
     config.bucket = this.state.bucket || config.bucket
@@ -30,7 +32,7 @@ class AwsCloudFormation extends Component {
       config.bucket = name
     }
 
-    const { cloudformation, s3 } = getClients()
+    const { cloudformation, s3 } = getClients(this.context.credentials.aws, config.region)
 
     let stackOutputs = {}
     if (await needsUpdate(cloudformation, config)) {
@@ -43,18 +45,25 @@ class AwsCloudFormation extends Component {
     this.state = {
       bucket: config.bucket,
       externalBucket: config.externalBucket,
-      region: config.region
+      region: config.region,
+      stackName: config.stackName
     }
     await this.save()
     return stackOutputs
   }
 
   async remove(inputs = {}) {
-    console.log('remove', inputs)
-    await deleteStack()
-    if (not(this.state.externalBucket)) {
-      // delete bucket
+    this.context.status('Removing')
+    if (!this.state.stackName) {
+      this.context.debug(`Aborting removal. Stack name not found in state.`)
+      return
     }
+    const { cloudformation, s3 } = getClients(this.context.credentials.aws, this.state.region)
+    let promises = [deleteStack(cloudformation, this.state)]
+    if (not(this.state.externalBucket)) {
+      promises.push(deleteBucket(s3, this.state))
+    }
+    await Promise.all(promises)
     this.state = {}
     await this.save()
     return {}

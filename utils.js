@@ -1,5 +1,5 @@
 const aws = require('aws-sdk')
-const { reduce, head, merge } = require('ramda')
+const { reduce, head, isNil, map, merge, not } = require('ramda')
 const { utils } = require('@serverless/core')
 
 const getClients = (credentials, region = 'us-east-1') => {
@@ -13,7 +13,6 @@ const getClients = (credentials, region = 'us-east-1') => {
 
 const needsUpdate = async (cloudformation, config) => {
   let deployedTemplate = ''
-  let exists = false
   try {
     deployedTemplate = await cloudformation
       .getTemplate({ StackName: config.stackName, TemplateStage: 'Original' })
@@ -99,25 +98,19 @@ const waitFor = async (cloudformation, event, config) =>
   new Promise(async (resolve, reject) => {
     let inProgress = true
     do {
-      const { Stacks } = await cloudformation
-        .describeStacks({ StackName: config.stackName })
-        .promise()
-      if (head(Stacks).StackStatus === event) {
-        return resolve(Stacks)
-      } else {
-        await utils.sleep(5000)
-      }
-    } while (inProgress)
-  })
-
-const waitFor2 = async (cloudformation, event, config) =>
-  new Promise((resolve, reject) => {
-    cloudformation.waitFor(event, { StackName: config.stackName }, (error, data) => {
-      if (error) {
+      try {
+        const { Stacks } = await cloudformation
+          .describeStacks({ StackName: config.stackName })
+          .promise()
+        if (head(Stacks).StackStatus === event) {
+          return resolve(Stacks)
+        } else {
+          await utils.sleep(5000)
+        }
+      } catch (error) {
         return reject(error)
       }
-      return resolve(data)
-    })
+    } while (inProgress)
   })
 
 const fetchOutputs = async (cloudformation, config) => {
@@ -128,11 +121,48 @@ const fetchOutputs = async (cloudformation, config) => {
 const stackOutputsToObject = (outputs) =>
   reduce((acc, { OutputKey, OutputValue }) => merge(acc, { [OutputKey]: OutputValue }), {}, outputs)
 
-const removeStack = async (cloudformation, config) => {}
+const deleteStack = async (cloudformation, config) => {
+  try {
+    await cloudformation.deleteStack({ StackName: config.stackName }).promise()
+    return await waitFor(cloudformation, 'DELETE_COMPLETE', config)
+  } catch (error) {
+    if (error.message !== `Stack with id ${config.stackName} does not exist`) {
+      throw error
+    }
+  }
+}
+
+const deleteBucket = async (s3, config) => {
+  let nextToken
+  try {
+    do {
+      const { NextContinuationToken, Contents } = await s3
+        .listObjectsV2({ Bucket: config.bucket, ContinuationToken: nextToken })
+        .promise()
+      await s3
+        .deleteObjects({
+          Bucket: config.bucket,
+          Delete: {
+            Objects: map(({ Key, VersionId }) => ({ Key, VersionId }), Contents),
+            Quiet: false
+          }
+        })
+        .promise()
+      nextToken = NextContinuationToken
+    } while (not(isNil(nextToken)))
+    return await s3.deleteBucket({ Bucket: config.bucket }).promise()
+  } catch (error) {
+    if (error.statusCode !== 404) {
+      throw error
+    }
+  }
+}
 
 module.exports = {
   needsUpdate,
   fetchOutputs,
+  deleteStack,
+  deleteBucket,
   createOrUpdateStack,
   constructTemplateS3Key,
   getClients,
