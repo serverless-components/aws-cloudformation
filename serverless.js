@@ -52,7 +52,8 @@ class AwsCloudFormation extends Component {
       bucket: config.bucket,
       externalBucket: config.externalBucket,
       region: config.region,
-      stackName: config.stackName
+      stackName: config.stackName,
+      parameters: config.parameters
     }
     await this.save()
     return stackOutputs

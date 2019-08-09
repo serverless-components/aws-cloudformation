@@ -1,5 +1,5 @@
 const aws = require('aws-sdk')
-const { reduce, head, isNil, map, merge, not } = require('ramda')
+const { reduce, head, isNil, map, merge, not, toPairs } = require('ramda')
 const { utils } = require('@serverless/core')
 
 const getClients = (credentials, region = 'us-east-1') => {
@@ -70,7 +70,13 @@ const createOrUpdateStack = async (cloudformation, config) => {
     // EnableTerminationProtection: config.enableTerminationProtection, cloudformation.updateTerminationProtection <- move here
     RoleARN: config.role,
     RollbackConfiguration: config.rollbackConfiguration,
-    Parameters: config.parameters,
+    Parameters: map(
+      ([key, value]) => ({
+        ParameterKey: key,
+        ParameterValue: value
+      }),
+      toPairs(config.parameters)
+    ),
     TemplateURL: `https://s3.amazonaws.com/${config.bucket}/${config.templateS3Key}`
   }
   if (!exists) {
