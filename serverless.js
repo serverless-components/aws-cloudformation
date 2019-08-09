@@ -28,6 +28,7 @@ class AwsCloudFormation extends Component {
 
     if (isNil(config.bucket)) {
       const awsS3 = await this.load('@serverless/aws-s3')
+      this.context.debug('Creating S3 bucket for the template.')
       const { name } = await awsS3()
       config.bucket = name
     }
@@ -36,9 +37,14 @@ class AwsCloudFormation extends Component {
 
     let stackOutputs = {}
     if (await needsUpdate(cloudformation, config)) {
+      this.context.debug(
+        `Uploading template ${config.templateS3Key} to S3 bucket ${config.bucket}.`
+      )
       await uploadTemplate(s3, config)
+      this.context.debug(`Deploying stack ${config.stackName}.`)
       stackOutputs = await createOrUpdateStack(cloudformation, config)
     } else {
+      this.context.debug(`Fetching stack outputs from stack ${config.stackName}.`)
       stackOutputs = await fetchOutputs(cloudformation, config)
     }
 
@@ -59,8 +65,10 @@ class AwsCloudFormation extends Component {
       return
     }
     const { cloudformation, s3 } = getClients(this.context.credentials.aws, this.state.region)
+    this.context.debug(`Deleting stack ${this.state.stackName}.`)
     let promises = [deleteStack(cloudformation, this.state)]
     if (not(this.state.externalBucket)) {
+      this.context.debug(`Deleting bucket ${this.state.bucket}.`)
       promises.push(deleteBucket(s3, this.state))
     }
     await Promise.all(promises)
