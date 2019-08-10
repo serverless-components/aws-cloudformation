@@ -220,6 +220,18 @@ const updateTerminationProtection = async (
   }
 }
 
+/**
+ * Loads and parses template file
+ * @param {string} template template path
+ * @returns {object} template
+ */
+const loadTemplate = async (template) => {
+  if (utils.isYamlPath(template) || utils.isJsonPath(template)) {
+    return utils.readFile(template)
+  }
+  throw new Error('Template is not defined, or not a yaml or js file')
+}
+
 module.exports = {
   getPreviousStack,
   fetchOutputs,
@@ -227,6 +239,7 @@ module.exports = {
   createOrUpdateStack,
   constructTemplateS3Key,
   getClients,
+  loadTemplate,
   uploadTemplate,
   updateTerminationProtection
 }

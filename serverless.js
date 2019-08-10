@@ -1,5 +1,5 @@
 const { Component } = require('@serverless/core')
-const { equals, isEmpty, isNil, mergeDeepRight, not } = require('ramda')
+const { equals, is, isEmpty, isNil, mergeDeepRight, not } = require('ramda')
 
 const {
   constructTemplateS3Key,
@@ -8,6 +8,7 @@ const {
   fetchOutputs,
   getClients,
   getPreviousStack,
+  loadTemplate,
   uploadTemplate,
   updateTerminationProtection
 } = require('./utils')
@@ -26,6 +27,15 @@ class AwsCloudFormation extends Component {
     config.externalBucket = not(isNil(config.bucket))
     config.bucket = this.state.bucket || config.bucket
     config.timestamp = Date.now()
+
+    if (is(String, config.template)) {
+      this.context.debug('Load template file.')
+      config.template = await loadTemplate(config.template)
+    }
+
+    if (isNil(config.template) || isNil(config.stackName)) {
+      throw new Error('Invalid inputs; template and stackName are required.')
+    }
 
     config.templateS3Key = constructTemplateS3Key(config)
 
