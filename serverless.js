@@ -63,7 +63,6 @@ class AwsCloudFormation extends Component {
       stackOutputs = await fetchOutputs(cloudformation, config)
     }
 
-    this.context.debug(`Update termination protection.`)
     await updateTerminationProtection(
       cloudformation,
       config,

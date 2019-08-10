@@ -1,5 +1,5 @@
 const aws = require('aws-sdk')
-const { reduce, head, isNil, equals, map, merge, not, toPairs } = require('ramda')
+const { reduce, head, includes, isNil, equals, map, merge, not, toPairs } = require('ramda')
 const { utils } = require('@serverless/core')
 
 /**
@@ -20,22 +20,22 @@ const getClients = (credentials, region = 'us-east-1') => {
 /**
  * Waits CloudFormation stack to reach certain event
  * @param {object} cloudformation
- * @param {string} event event to wait for
+ * @param {string} events events to wait for
  * @param {object} config
  * @returns {array} stack outputs
  */
-const waitFor = async (cloudformation, event, config) =>
+const waitFor = async (cloudformation, events, config) =>
   new Promise(async (resolve, reject) => {
     const inProgress = true
     do {
       try {
+        await utils.sleep(5000)
         const { Stacks } = await cloudformation
           .describeStacks({ StackName: config.stackName })
           .promise()
-        if (head(Stacks).StackStatus === event) {
+        if (includes(head(Stacks).StackStatus, events)) {
           return resolve(Stacks)
         }
-        await utils.sleep(5000)
       } catch (error) {
         return reject(error)
       }
@@ -172,11 +172,7 @@ const createOrUpdateStack = async (cloudformation, config, exists) => {
     }
   }
 
-  const stacks = await waitFor(
-    cloudformation,
-    exists ? 'UPDATE_COMPLETE' : 'CREATE_COMPLETE',
-    config
-  )
+  const stacks = await waitFor(cloudformation, ['UPDATE_COMPLETE', 'CREATE_COMPLETE'], config)
 
   return stackOutputsToObject(head(stacks).Outputs)
 }
@@ -195,7 +191,7 @@ const fetchOutputs = async (cloudformation, config) => {
 const deleteStack = async (cloudformation, config) => {
   try {
     await cloudformation.deleteStack({ StackName: config.stackName }).promise()
-    return await waitFor(cloudformation, 'DELETE_COMPLETE', config)
+    return await waitFor(cloudformation, ['DELETE_COMPLETE'], config)
   } catch (error) {
     if (error.message !== `Stack with id ${config.stackName} does not exist`) {
       throw error
