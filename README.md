@@ -45,13 +45,36 @@ AWS_SECRET_ACCESS_KEY=XXX
 name: my-service
 stage: dev
 
-myParameters:
+myStack:
   component: '@serverless/aws-cloudformation'
   inputs:
-    bucket: XXX
     template:
-      XXX
+      AWSTemplateFormatVersion: '2010-09-09'
+      Description: Example stack 1
+      Resources:
+        LogGroup:
+          Type: AWS::Logs::LogGroup
+          Properties:
+            LogGroupName: /log/group/one
+            RetentionInDays: 14
+      Outputs:
+        LogGroupArn:
+          Value:
+            Fn::GetAtt:
+              - LogGroup
+              - Arn
 ```
+
+Inputs can contain the following properties:
+- `stackName` **[required]**. the name of the stack
+- `template` **[required]**, the template to deploy, can also be a local path to the template, e.g. `./my-template.yml`
+- `bucket`, the deployment bucket where the template is stored before deployment. If not set a new bucket will be created.
+- `capabilities`, possible values are `CAPABILITY_IAM`, `CAPABILITY_NAMED_IAM`, and `CAPABILITY_AUTO_EXPAND`.
+- `enableTerminationProtection`, possible values are `true` and `false`. Default is `false`.
+- `rollbackConfiguration`, see [RollbackConfiguration](https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_RollbackConfiguration.html)
+- `role`, role arn for the role which CloudFormation assumes to create the stack.
+
+See [Request Parameters](https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_CreateStack.html#API_CreateStack_RequestParameters) for more info about capabilities, enableTerminationProtection, and role.
 
 ### 4. Deploy
 
