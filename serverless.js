@@ -95,7 +95,7 @@ class AwsCloudFormation extends Component {
       this.context.debug(`Aborting removal. Stack name not found in state.`)
       return
     }
-    const { cloudformation, s3 } = getClients(this.context.credentials.aws, this.state.region)
+    const { cloudformation } = getClients(this.context.credentials.aws, this.state.region)
     this.context.debug(`Deleting stack ${this.state.stackName}.`)
     await deleteStack(cloudformation, this.state)
     if (not(this.state.externalBucket)) {
