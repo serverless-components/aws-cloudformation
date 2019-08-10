@@ -204,37 +204,6 @@ const deleteStack = async (cloudformation, config) => {
 }
 
 /**
- * Deletes the content of the bucket and also the bucket
- * @param {object} s3
- * @param {object} config
- */
-const deleteBucket = async (s3, config) => {
-  let nextToken
-  try {
-    do {
-      const { NextContinuationToken, Contents } = await s3
-        .listObjectsV2({ Bucket: config.bucket, ContinuationToken: nextToken })
-        .promise()
-      await s3
-        .deleteObjects({
-          Bucket: config.bucket,
-          Delete: {
-            Objects: map(({ Key, VersionId }) => ({ Key, VersionId }), Contents),
-            Quiet: false
-          }
-        })
-        .promise()
-      nextToken = NextContinuationToken
-    } while (not(isNil(nextToken)))
-    return await s3.deleteBucket({ Bucket: config.bucket }).promise()
-  } catch (error) {
-    if (error.statusCode !== 404) {
-      throw error
-    }
-  }
-}
-
-/**
  * Updates stack termination protection
  * @param {object} cloudformation
  * @param {object} config
@@ -259,7 +228,6 @@ module.exports = {
   getPreviousStack,
   fetchOutputs,
   deleteStack,
-  deleteBucket,
   createOrUpdateStack,
   constructTemplateS3Key,
   getClients,

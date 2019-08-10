@@ -4,7 +4,6 @@ const { equals, isEmpty, isNil, mergeDeepRight, not } = require('ramda')
 const {
   constructTemplateS3Key,
   createOrUpdateStack,
-  deleteBucket,
   deleteStack,
   fetchOutputs,
   getClients,
@@ -89,12 +88,12 @@ class AwsCloudFormation extends Component {
     }
     const { cloudformation, s3 } = getClients(this.context.credentials.aws, this.state.region)
     this.context.debug(`Deleting stack ${this.state.stackName}.`)
-    const promises = [deleteStack(cloudformation, this.state)]
+    await deleteStack(cloudformation, this.state)
     if (not(this.state.externalBucket)) {
       this.context.debug(`Deleting bucket ${this.state.bucket}.`)
-      promises.push(deleteBucket(s3, this.state))
+      const awsS3 = await this.load('@serverless/aws-s3')
+      await awsS3.remove()
     }
-    await Promise.all(promises)
     this.state = {}
     await this.save()
     return {}
