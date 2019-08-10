@@ -1,23 +1,23 @@
 const { Component } = require('@serverless/core')
-const { isNil, isEmpty, mergeDeepRight, not } = require('ramda')
+const { equals, isEmpty, isNil, mergeDeepRight, not } = require('ramda')
 
 const {
-  getPreviousStack,
-  getClients,
-  deleteStack,
-  deleteBucket,
-  fetchOutputs,
   constructTemplateS3Key,
   createOrUpdateStack,
+  deleteBucket,
+  deleteStack,
+  fetchOutputs,
+  getClients,
+  getPreviousStack,
   uploadTemplate,
   updateTerminationProtection
 } = require('./utils')
 
 const defaults = {
-  region: 'us-east-1',
+  enableTerminationProtection: false,
   parameters: {},
-  rollbackConfiguration: {},
-  enableTerminationProtection: false
+  region: 'us-east-1',
+  rollbackConfiguration: {}
 }
 
 class AwsCloudFormation extends Component {
@@ -38,6 +38,13 @@ class AwsCloudFormation extends Component {
     }
 
     const { cloudformation, s3 } = getClients(this.context.credentials.aws, config.region)
+
+    if (not(isNil(this.state.stackName)) && not(equals(this.state.stackName, config.stackName))) {
+      this.context.debug(
+        `Delete stack ${this.state.stackName} prior to creation of ${config.stackName}.`
+      )
+      await deleteStack(cloudformation, this.state)
+    }
 
     let stackOutputs = {}
     let previousStack = await getPreviousStack(cloudformation, config)
