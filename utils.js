@@ -2,6 +2,12 @@ const aws = require('aws-sdk')
 const { reduce, head, isNil, equals, map, merge, not, toPairs } = require('ramda')
 const { utils } = require('@serverless/core')
 
+/**
+ * Get AWS clients
+ * @param {object} credentials
+ * @param {string} region
+ * @returns {object} AWS clients
+ */
 const getClients = (credentials, region = 'us-east-1') => {
   const cloudformation = new aws.CloudFormation({ credentials, region })
   const s3 = new aws.S3({ credentials, region })
@@ -11,6 +17,37 @@ const getClients = (credentials, region = 'us-east-1') => {
   }
 }
 
+/**
+ * Waits CloudFormation stack to reach certain event
+ * @param {object} cloudformation
+ * @param {string} event event to wait for
+ * @param {object} config
+ * @returns {array} stack outputs
+ */
+const waitFor = async (cloudformation, event, config) =>
+  new Promise(async (resolve, reject) => {
+    const inProgress = true
+    do {
+      try {
+        const { Stacks } = await cloudformation
+          .describeStacks({ StackName: config.stackName })
+          .promise()
+        if (head(Stacks).StackStatus === event) {
+          return resolve(Stacks)
+        }
+        await utils.sleep(5000)
+      } catch (error) {
+        return reject(error)
+      }
+    } while (inProgress)
+  })
+
+/**
+ * Fetches previously deployed stack
+ * @param {object} cloudformation cloudformation client
+ * @param {object} config config object
+ * @returns {object} stack and info if stack needs to be updated
+ */
 const getPreviousStack = async (cloudformation, config) => {
   let previousTemplate
   let stack
@@ -65,12 +102,22 @@ const getPreviousStack = async (cloudformation, config) => {
   }
 }
 
+/**
+ * Constructs S3 key for CloudFormation template
+ * @param {object} config
+ * @returns {string} key
+ */
 const constructTemplateS3Key = (config) => {
   return `${config.stackName}/${config.timestamp}-${new Date(
     config.timestamp
   ).toISOString()}/template.json`
 }
 
+/**
+ * Uploads template to S3 bucket
+ * @param {object} s3
+ * @param {object} config
+ */
 const uploadTemplate = async (s3, config) => {
   await s3
     .putObject({
@@ -83,6 +130,21 @@ const uploadTemplate = async (s3, config) => {
     .promise()
 }
 
+/**
+ * Converts stack outputs to an object
+ * @param {array} outputs
+ * @returns {object} stack outputs
+ */
+const stackOutputsToObject = (outputs) =>
+  reduce((acc, { OutputKey, OutputValue }) => merge(acc, { [OutputKey]: OutputValue }), {}, outputs)
+
+/**
+ * Creates or updates the CloudFormation stack
+ * @param {object} cloudformation
+ * @param {object} config
+ * @param {boolean} exists info if stack is already deployes
+ * @returns {array} stack outputs
+ */
 const createOrUpdateStack = async (cloudformation, config, exists) => {
   const params = {
     StackName: config.stackName,
@@ -119,32 +181,16 @@ const createOrUpdateStack = async (cloudformation, config, exists) => {
   return stackOutputsToObject(head(stacks).Outputs)
 }
 
-const waitFor = async (cloudformation, event, config) =>
-  new Promise(async (resolve, reject) => {
-    let inProgress = true
-    do {
-      try {
-        const { Stacks } = await cloudformation
-          .describeStacks({ StackName: config.stackName })
-          .promise()
-        if (head(Stacks).StackStatus === event) {
-          return resolve(Stacks)
-        } else {
-          await utils.sleep(5000)
-        }
-      } catch (error) {
-        return reject(error)
-      }
-    } while (inProgress)
-  })
-
+/**
+ * Fetches stack outputs
+ * @param {*} cloudformation
+ * @param {*} config
+ * @returns {array} stack outputs
+ */
 const fetchOutputs = async (cloudformation, config) => {
   const { Stacks } = await cloudformation.describeStacks({ StackName: config.stackName }).promise()
   return stackOutputsToObject(head(Stacks).Outputs)
 }
-
-const stackOutputsToObject = (outputs) =>
-  reduce((acc, { OutputKey, OutputValue }) => merge(acc, { [OutputKey]: OutputValue }), {}, outputs)
 
 const deleteStack = async (cloudformation, config) => {
   try {
@@ -157,6 +203,11 @@ const deleteStack = async (cloudformation, config) => {
   }
 }
 
+/**
+ * Deletes the content of the bucket and also the bucket
+ * @param {object} s3
+ * @param {object} config
+ */
 const deleteBucket = async (s3, config) => {
   let nextToken
   try {
@@ -183,6 +234,12 @@ const deleteBucket = async (s3, config) => {
   }
 }
 
+/**
+ * Updates stack termination protection
+ * @param {object} cloudformation
+ * @param {object} config
+ * @param {boolean} terminationProtectionEnabled
+ */
 const updateTerminationProtection = async (
   cloudformation,
   config,

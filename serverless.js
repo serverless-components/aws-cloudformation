@@ -47,7 +47,7 @@ class AwsCloudFormation extends Component {
     }
 
     let stackOutputs = {}
-    let previousStack = await getPreviousStack(cloudformation, config)
+    const previousStack = await getPreviousStack(cloudformation, config)
     if (previousStack.needsUpdate) {
       this.context.debug(
         `Uploading template ${config.templateS3Key} to S3 bucket ${config.bucket}.`
@@ -81,7 +81,7 @@ class AwsCloudFormation extends Component {
     return stackOutputs
   }
 
-  async remove(inputs = {}) {
+  async remove() {
     this.context.status('Removing')
     if (!this.state.stackName) {
       this.context.debug(`Aborting removal. Stack name not found in state.`)
@@ -89,7 +89,7 @@ class AwsCloudFormation extends Component {
     }
     const { cloudformation, s3 } = getClients(this.context.credentials.aws, this.state.region)
     this.context.debug(`Deleting stack ${this.state.stackName}.`)
-    let promises = [deleteStack(cloudformation, this.state)]
+    const promises = [deleteStack(cloudformation, this.state)]
     if (not(this.state.externalBucket)) {
       this.context.debug(`Deleting bucket ${this.state.bucket}.`)
       promises.push(deleteBucket(s3, this.state))
