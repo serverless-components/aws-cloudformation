@@ -1,5 +1,5 @@
 const aws = require('aws-sdk')
-const { reduce, head, includes, isNil, equals, map, merge, not, toPairs } = require('ramda')
+const { equals, head, includes, isNil, map, merge, not, reduce, toPairs } = require('ramda')
 const { utils } = require('@serverless/core')
 
 /**
@@ -233,13 +233,13 @@ const loadTemplate = async (template) => {
 }
 
 module.exports = {
-  getPreviousStack,
-  fetchOutputs,
-  deleteStack,
-  createOrUpdateStack,
   constructTemplateS3Key,
+  createOrUpdateStack,
+  deleteStack,
+  fetchOutputs,
   getClients,
+  getPreviousStack,
   loadTemplate,
-  uploadTemplate,
-  updateTerminationProtection
+  updateTerminationProtection,
+  uploadTemplate
 }
