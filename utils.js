@@ -1,5 +1,5 @@
 const aws = require('aws-sdk')
-const { reduce, head, isNil, map, merge, not, toPairs } = require('ramda')
+const { reduce, head, isNil, equals, map, merge, not, toPairs } = require('ramda')
 const { utils } = require('@serverless/core')
 
 const getClients = (credentials, region = 'us-east-1') => {
@@ -11,23 +11,58 @@ const getClients = (credentials, region = 'us-east-1') => {
   }
 }
 
-const needsUpdate = async (cloudformation, config) => {
-  let deployedTemplate = ''
+const getPreviousStack = async (cloudformation, config) => {
+  let previousTemplate
+  let stack
+
   try {
-    deployedTemplate = await cloudformation
+    previousTemplate = await cloudformation
       .getTemplate({ StackName: config.stackName, TemplateStage: 'Original' })
       .promise()
-    exists = true
   } catch (error) {
     if (error.message !== `Stack with id ${config.stackName} does not exist`) {
       throw error
     }
-    return true
   }
-  if (deployedTemplate.TemplateBody === JSON.stringify(config.template)) {
-    return false
+
+  if (isNil(previousTemplate)) {
+    return {
+      stack: {},
+      needsUpdate: true
+    }
   }
-  return true
+
+  try {
+    const { Stacks } = await cloudformation
+      .describeStacks({ StackName: config.stackName })
+      .promise()
+    stack = head(Stacks)
+  } catch (error) {
+    if (error.message !== `Stack with id ${config.stackName} does not exist`) {
+      throw error
+    }
+  }
+
+  const previousParameters = reduce(
+    (acc, { ParameterKey, ParameterValue }) => merge(acc, { [ParameterKey]: ParameterValue }),
+    {},
+    stack.Parameters
+  )
+
+  if (
+    equals(previousTemplate.TemplateBody, JSON.stringify(config.template)) &&
+    equals(previousParameters, config.parameters)
+  ) {
+    return {
+      stack,
+      needsUpdate: false
+    }
+  }
+
+  return {
+    stack,
+    needsUpdate: true
+  }
 }
 
 const constructTemplateS3Key = (config) => {
@@ -48,26 +83,10 @@ const uploadTemplate = async (s3, config) => {
     .promise()
 }
 
-const createOrUpdateStack = async (cloudformation, config) => {
-  let deployedTemplate = ''
-  let exists = false
-  try {
-    deployedTemplate = await cloudformation
-      .getTemplate({ StackName: config.stackName, TemplateStage: 'Original' })
-      .promise()
-    exists = true
-  } catch (error) {
-    if (error.message !== `Stack with id ${config.stackName} does not exist`) {
-      throw error
-    }
-  }
-  if (deployedTemplate.TemplateBody === JSON.stringify(config.template)) {
-    return
-  }
+const createOrUpdateStack = async (cloudformation, config, exists) => {
   const params = {
     StackName: config.stackName,
     Capabilities: config.capabilities,
-    // EnableTerminationProtection: config.enableTerminationProtection, cloudformation.updateTerminationProtection <- move here
     RoleARN: config.role,
     RollbackConfiguration: config.rollbackConfiguration,
     Parameters: map(
@@ -79,7 +98,7 @@ const createOrUpdateStack = async (cloudformation, config) => {
     ),
     TemplateURL: `https://s3.amazonaws.com/${config.bucket}/${config.templateS3Key}`
   }
-  if (!exists) {
+  if (not(exists)) {
     await cloudformation.createStack(params).promise()
   } else {
     try {
@@ -164,13 +183,29 @@ const deleteBucket = async (s3, config) => {
   }
 }
 
+const updateTerminationProtection = async (
+  cloudformation,
+  config,
+  terminationProtectionEnabled
+) => {
+  if (not(equals(terminationProtectionEnabled, config.enableTerminationProtection))) {
+    await cloudformation
+      .updateTerminationProtection({
+        EnableTerminationProtection: config.enableTerminationProtection,
+        StackName: config.stackName
+      })
+      .promise()
+  }
+}
+
 module.exports = {
-  needsUpdate,
+  getPreviousStack,
   fetchOutputs,
   deleteStack,
   deleteBucket,
   createOrUpdateStack,
   constructTemplateS3Key,
   getClients,
-  uploadTemplate
+  uploadTemplate,
+  updateTerminationProtection
 }

@@ -1,19 +1,23 @@
 const { Component } = require('@serverless/core')
-const { isNil, merge, mergeDeepRight, not } = require('ramda')
+const { isNil, isEmpty, mergeDeepRight, not } = require('ramda')
 
 const {
-  needsUpdate,
+  getPreviousStack,
   getClients,
   deleteStack,
   deleteBucket,
   fetchOutputs,
   constructTemplateS3Key,
   createOrUpdateStack,
-  uploadTemplate
+  uploadTemplate,
+  updateTerminationProtection
 } = require('./utils')
 
 const defaults = {
-  region: 'us-east-1'
+  region: 'us-east-1',
+  parameters: {},
+  rollbackConfiguration: {},
+  enableTerminationProtection: false
 }
 
 class AwsCloudFormation extends Component {
@@ -36,24 +40,35 @@ class AwsCloudFormation extends Component {
     const { cloudformation, s3 } = getClients(this.context.credentials.aws, config.region)
 
     let stackOutputs = {}
-    if (await needsUpdate(cloudformation, config)) {
+    let previousStack = await getPreviousStack(cloudformation, config)
+    if (previousStack.needsUpdate) {
       this.context.debug(
         `Uploading template ${config.templateS3Key} to S3 bucket ${config.bucket}.`
       )
       await uploadTemplate(s3, config)
       this.context.debug(`Deploying stack ${config.stackName}.`)
-      stackOutputs = await createOrUpdateStack(cloudformation, config)
+      stackOutputs = await createOrUpdateStack(
+        cloudformation,
+        config,
+        not(isEmpty(previousStack.stack))
+      )
     } else {
       this.context.debug(`Fetching stack outputs from stack ${config.stackName}.`)
       stackOutputs = await fetchOutputs(cloudformation, config)
     }
 
+    this.context.debug(`Update termination protection.`)
+    await updateTerminationProtection(
+      cloudformation,
+      config,
+      !!previousStack.stack.EnableTerminationProtection
+    )
+
     this.state = {
       bucket: config.bucket,
       externalBucket: config.externalBucket,
       region: config.region,
-      stackName: config.stackName,
-      parameters: config.parameters
+      stackName: config.stackName
     }
     await this.save()
     return stackOutputs
