@@ -5,14 +5,13 @@ Easily Deploy Cloudformation templates on AWS using [Serverless Components](http
 &nbsp;
 
 - [AWS Cloudformation](#aws-cloudformation)
-    - [1. Install](#1-install)
-    - [2. Create](#2-create)
-    - [3. Configure](#3-configure)
-    - [4. Deploy](#4-deploy)
-    - [New to Components?](#new-to-components)
+  - [1. Install](#1-install)
+  - [2. Create](#2-create)
+  - [3. Configure](#3-configure)
+  - [4. Deploy](#4-deploy)
+  - [New to Components?](#new-to-components)
 
 &nbsp;
-
 
 ### 1. Install
 
@@ -66,13 +65,15 @@ myStack:
 ```
 
 Inputs can contain the following properties:
+
 - `stackName` **[required]**. the name of the stack
 - `template` **[required]**, the template to deploy, can also be a local path to the template, e.g. `./my-template.yml`
-- `bucket`, the deployment bucket where the template is stored before deployment. If not set a new bucket will be created.
+- `bucket`, the deployment bucket where the template is stored before deployment. If not set, the template is sent on request and 52100 bytes size limit applies.
 - `capabilities`, possible values are `CAPABILITY_IAM`, `CAPABILITY_NAMED_IAM`, and `CAPABILITY_AUTO_EXPAND`.
 - `enableTerminationProtection`, possible values are `true` and `false`. Default is `false`.
 - `rollbackConfiguration`, see [RollbackConfiguration](https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_RollbackConfiguration.html)
 - `role`, role arn for the role which CloudFormation assumes to create the stack.
+- `disableRollback`, possible values are `true` and `false`. Cannot be updated.
 
 See [Request Parameters](https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_CreateStack.html#API_CreateStack_RequestParameters) for more info about capabilities, enableTerminationProtection, and role.
 

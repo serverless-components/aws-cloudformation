@@ -1,5 +1,5 @@
 const aws = require('aws-sdk')
-const { equals, head, includes, isNil, map, merge, not, reduce, toPairs } = require('ramda')
+const { equals, head, isNil, keys, map, merge, not, pick, reduce, toPairs } = require('ramda')
 const { utils } = require('@serverless/core')
 const { schema } = require('./schema')
 
@@ -21,11 +21,12 @@ const getClients = (credentials, region = 'us-east-1') => {
 /**
  * Waits CloudFormation stack to reach certain event
  * @param {object} cloudformation
- * @param {string} events events to wait for
+ * @param {RegExp} successEvent event regexp to wait for
+ * @param {RegExp} failureEvent event regexp which throws error
  * @param {object} config
  * @returns {array} stack outputs
  */
-const waitFor = async (cloudformation, events, config) =>
+const waitFor = async (cloudformation, successEvent, failureEvent, config) =>
   new Promise(async (resolve, reject) => {
     const inProgress = true
     do {
@@ -34,8 +35,11 @@ const waitFor = async (cloudformation, events, config) =>
         const { Stacks } = await cloudformation
           .describeStacks({ StackName: config.stackName })
           .promise()
-        if (includes(head(Stacks).StackStatus, events)) {
+        const stackStatus = head(Stacks).StackStatus
+        if (successEvent.test(stackStatus)) {
           return resolve(Stacks)
+        } else if (failureEvent.test(stackStatus)) {
+          return reject(new Error(`CloudFormation failed with status ${stackStatus}`))
         }
       } catch (error) {
         return reject(error)
@@ -81,15 +85,20 @@ const getPreviousStack = async (cloudformation, config) => {
     }
   }
 
-  const previousParameters = reduce(
-    (acc, { ParameterKey, ParameterValue }) => merge(acc, { [ParameterKey]: ParameterValue }),
-    {},
-    stack.Parameters
-  )
+  const previousConfig = {
+    parameters: reduce(
+      (acc, { ParameterKey, ParameterValue }) => merge(acc, { [ParameterKey]: ParameterValue }),
+      {},
+      stack.Parameters
+    ),
+    role: stack.RoleARN,
+    capabilities: stack.Capabilities,
+    rollbackConfiguration: stack.RollbackConfiguration
+  }
 
   if (
     equals(previousTemplate.TemplateBody, JSON.stringify(config.template)) &&
-    equals(previousParameters, config.parameters)
+    equals(previousConfig, pick(keys(previousConfig), config))
   ) {
     return {
       stack,
@@ -147,7 +156,7 @@ const stackOutputsToObject = (outputs) =>
  * @returns {array} stack outputs
  */
 const createOrUpdateStack = async (cloudformation, config, exists) => {
-  const params = {
+  let params = {
     StackName: config.stackName,
     Capabilities: config.capabilities,
     RoleARN: config.role,
@@ -158,11 +167,21 @@ const createOrUpdateStack = async (cloudformation, config, exists) => {
         ParameterValue: value
       }),
       toPairs(config.parameters)
-    ),
-    TemplateURL: `https://s3.amazonaws.com/${config.bucket}/${config.templateS3Key}`
+    )
   }
+
+  if (not(isNil(config.templateS3Key))) {
+    params = merge(params, {
+      TemplateURL: `https://s3.amazonaws.com/${config.bucket}/${config.templateS3Key}`
+    })
+  } else {
+    params = merge(params, { TemplateBody: JSON.stringify(config.template) })
+  }
+
   if (not(exists)) {
-    await cloudformation.createStack(params).promise()
+    await cloudformation
+      .createStack(merge(params, { DisableRollback: config.disableRollback }))
+      .promise()
   } else {
     try {
       await cloudformation.updateStack(params).promise()
@@ -173,15 +192,20 @@ const createOrUpdateStack = async (cloudformation, config, exists) => {
     }
   }
 
-  const stacks = await waitFor(cloudformation, ['UPDATE_COMPLETE', 'CREATE_COMPLETE'], config)
+  const stacks = await waitFor(
+    cloudformation,
+    /^(CREATE|UPDATE)_COMPLETE$/,
+    /^.+_FAILED|^(.*ROLLBACK_COMPLETE)$/,
+    config
+  )
 
   return stackOutputsToObject(head(stacks).Outputs)
 }
 
 /**
  * Fetches stack outputs
- * @param {*} cloudformation
- * @param {*} config
+ * @param {object} cloudformation
+ * @param {object} config
  * @returns {array} stack outputs
  */
 const fetchOutputs = async (cloudformation, config) => {
@@ -189,10 +213,16 @@ const fetchOutputs = async (cloudformation, config) => {
   return stackOutputsToObject(head(Stacks).Outputs)
 }
 
+/**
+ * Deletes the stack
+ * @param {object} cloudformation
+ * @param {object} config
+ * @returns {object}
+ */
 const deleteStack = async (cloudformation, config) => {
   try {
     await cloudformation.deleteStack({ StackName: config.stackName }).promise()
-    return await waitFor(cloudformation, ['DELETE_COMPLETE'], config)
+    return await waitFor(cloudformation, /^DELETE_COMPLETE$/, /^DELETE_FAILED$/, config)
   } catch (error) {
     if (error.message !== `Stack with id ${config.stackName} does not exist`) {
       throw error

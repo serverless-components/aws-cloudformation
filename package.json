@@ -12,7 +12,6 @@
   "author": "Serverless, Inc.",
   "license": "MIT",
   "dependencies": {
-    "@serverless/aws-s3": "^2.0.12",
     "@serverless/core": "^1.0.0",
     "aws-sdk": "^2.505.0",
     "ramda": "^0.26.1"
