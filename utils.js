@@ -195,7 +195,7 @@ const createOrUpdateStack = async (cloudformation, config, exists) => {
   const stacks = await waitFor(
     cloudformation,
     /^(CREATE|UPDATE)_COMPLETE$/,
-    /^.+_FAILED|^(.*ROLLBACK_COMPLETE)$/,
+    /^(.+_FAILED|.*ROLLBACK_COMPLETE)$/,
     config
   )
 
