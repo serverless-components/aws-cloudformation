@@ -1,6 +1,7 @@
 const aws = require('aws-sdk')
 const { equals, head, includes, isNil, map, merge, not, reduce, toPairs } = require('ramda')
 const { utils } = require('@serverless/core')
+const { schema } = require('./schema')
 
 /**
  * Get AWS clients
@@ -227,7 +228,7 @@ const updateTerminationProtection = async (
  */
 const loadTemplate = async (template) => {
   if (utils.isYamlPath(template) || utils.isJsonPath(template)) {
-    return utils.readFile(template)
+    return utils.readFile(template, { schema })
   }
   throw new Error('Template is not defined, or not a yaml or js file')
 }
