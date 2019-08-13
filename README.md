@@ -1,6 +1,6 @@
 # AWS Cloudformation
 
-Easily Deploy Cloudformation templates on AWS using [Serverless Components](https://github.com/serverless/components).
+Easily Deploy AWS Cloudformation templates using [Serverless Components](https://github.com/serverless/components), and pass their outputs to other Serverless Components.
 
 &nbsp;
 
