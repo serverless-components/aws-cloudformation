@@ -47,6 +47,7 @@ stage: dev
 myStack:
   component: '@serverless/aws-cloudformation'
   inputs:
+    stackName: my-stack
     template:
       AWSTemplateFormatVersion: '2010-09-09'
       Description: Example stack 1
