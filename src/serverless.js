@@ -4,7 +4,6 @@ const { equals, is, isEmpty, isNil, mergeDeepRight, not } = require('ramda')
 const {
   createOrUpdateStack,
   deleteStack,
-  fetchOutputs,
   getClients,
   getStack,
   updateTerminationProtection
@@ -62,7 +61,7 @@ class AwsCloudFormation extends Component {
 
     stack = await getStack(cloudformation, config)
 
-    return { stack }
+    return stack
   }
 
   async remove() {

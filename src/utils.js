@@ -34,6 +34,14 @@ const getStack = async (cloudformation, config) => {
     }
   }
 
+  if (stack && stack.Outputs) {
+    const outputsObject = {}
+    stack.Outputs.forEach((o) => {
+      outputsObject[o.OutputKey] = o.OutputValue
+    })
+    stack.Outputs = outputsObject
+  }
+
   return stack
 }
 
