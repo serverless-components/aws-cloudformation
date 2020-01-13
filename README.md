@@ -44,7 +44,7 @@ AWS_SECRET_ACCESS_KEY=XXX
 org: # Enter your org
 app: # Enter your app
 component: aws-cloudformation@0.0.1
-name: my-service
+name: my-stack
 stage: dev
 
 inputs:
