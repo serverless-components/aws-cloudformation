@@ -29,7 +29,7 @@ $ touch .env      # your development AWS api keys
 $ touch .env.prod # your production AWS api keys
 ```
 
-the `.env` files are not required if you have the aws keys set globally and you want to use a single stage, but they should look like this.
+the `.env` files are required.  They should look like this:
 
 ```
 AWS_ACCESS_KEY_ID=XXX
@@ -45,7 +45,7 @@ name: my-service
 stage: dev
 
 myStack:
-  component: '@serverless/aws-cloudformation'
+  component: 'aws-cloudformation'
   inputs:
     stackName: my-stack
     template:
@@ -68,8 +68,7 @@ myStack:
 Inputs can contain the following properties:
 
 - `stackName` **[required]**. the name of the stack
-- `template` **[required]**, the template to deploy, can also be a local path to the template, e.g. `./my-template.yml`
-- `bucket`, the deployment bucket where the template is stored before deployment. If not set, the template is sent on request and 52100 bytes size limit applies.
+- `template` **[required]**, the AWS CloudFormation template.
 - `capabilities`, possible values are `CAPABILITY_IAM`, `CAPABILITY_NAMED_IAM`, and `CAPABILITY_AUTO_EXPAND`.
 - `enableTerminationProtection`, possible values are `true` and `false`. Default is `false`.
 - `rollbackConfiguration`, see [RollbackConfiguration](https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_RollbackConfiguration.html)
