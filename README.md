@@ -41,28 +41,29 @@ AWS_SECRET_ACCESS_KEY=XXX
 ```yml
 # serverless.yml
 
+org: # Enter your org
+app: # Enter your app
+component: aws-cloudformation@0.0.1
 name: my-service
 stage: dev
 
-myStack:
-  component: 'aws-cloudformation'
-  inputs:
-    stackName: my-stack
-    template:
-      AWSTemplateFormatVersion: '2010-09-09'
-      Description: Example stack 1
-      Resources:
-        LogGroup:
-          Type: AWS::Logs::LogGroup
-          Properties:
-            LogGroupName: /log/group/one
-            RetentionInDays: 14
-      Outputs:
-        LogGroupArn:
-          Value:
-            Fn::GetAtt:
-              - LogGroup
-              - Arn
+inputs:
+  stackName: my-stack
+  template:
+    AWSTemplateFormatVersion: '2010-09-09'
+    Description: Example stack 1
+    Resources:
+      LogGroup:
+        Type: AWS::Logs::LogGroup
+        Properties:
+          LogGroupName: /log/group/one
+          RetentionInDays: 14
+    Outputs:
+      LogGroupArn:
+        Value:
+          Fn::GetAtt:
+            - LogGroup
+            - Arn
 ```
 
 Inputs can contain the following properties:
