@@ -1,5 +1,5 @@
 name: aws-cloudformation
-version: dev
+version: 1.0.0
 author: eahefnawy
 org: serverlessinc
 description: Deploys a CloudFormation stack to your aws account

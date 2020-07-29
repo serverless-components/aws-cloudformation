@@ -1,0 +1,20 @@
+name: aws-cloudformation-starter
+component: aws-cloudformation
+
+inputs:
+  name: my-stack
+  template:
+    AWSTemplateFormatVersion: '2010-09-09'
+    Description: Example stack 1
+    Resources:
+      LogGroup:
+        Type: AWS::Logs::LogGroup
+        Properties:
+          LogGroupName: /log/group/starter
+          RetentionInDays: 14
+    Outputs:
+      LogGroupArn:
+        Value:
+          Fn::GetAtt:
+            - LogGroup
+            - Arn
