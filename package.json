@@ -1,7 +1,7 @@
 {
   "name": "@serverless/aws-cloudformation",
   "version": "1.0.0",
-  "main": "./serverless.js",
+  "main": "./src/serverless.js",
   "publishConfig": {
     "access": "public"
   },
@@ -12,9 +12,7 @@
   "author": "Serverless, Inc.",
   "license": "MIT",
   "dependencies": {
-    "@serverless/core": "^1.0.0",
-    "aws-sdk": "^2.505.0",
-    "ramda": "^0.26.1"
+    "@serverless/aws-sdk-extra": "^1.0.0"
   },
   "devDependencies": {
     "babel-eslint": "10.0.2",
