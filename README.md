@@ -44,7 +44,7 @@ name: my-stack
 component: aws-cloudformation
 
 inputs:
-  stackName: my-stack
+  name: my-stack
   template:
     AWSTemplateFormatVersion: '2010-09-09'
     Description: Example stack 1
@@ -64,7 +64,7 @@ inputs:
 
 Inputs can contain the following properties:
 
-- `stackName` **[required]**. the name of the stack
+- `name` **[required]**. the name of the stack
 - `template` **[required]**, the template to deploy.
 - `capabilities`, possible values are `CAPABILITY_IAM`, `CAPABILITY_NAMED_IAM`, and `CAPABILITY_AUTO_EXPAND`.
 - `enableTerminationProtection`, possible values are `true` and `false`. Default is `false`.

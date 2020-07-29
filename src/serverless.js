@@ -16,14 +16,20 @@ class CloudFormation extends Component {
 
     this.state.region = inputs.region || 'us-east-1'
 
+    inputs.name = inputs.name || this.name
+
+    if (!inputs.name) {
+      throw new Error(`The "name" input is missing.`)
+    }
+
     const extras = new AWS.Extras({
       credentials: this.credentials.aws,
       region: this.state.region
     })
 
-    const outputs = await extras.deployStack(inputs)
+    const outputs = await extras.deployStack({ stackName: inputs.name, ...inputs })
 
-    this.state.stackName = inputs.stackName
+    this.state.name = inputs.name
 
     return outputs
   }
@@ -37,7 +43,7 @@ class CloudFormation extends Component {
       region: this.state.region
     })
 
-    await extras.removeStack({ stackName: this.state.stackName })
+    await extras.removeStack({ stackName: this.state.name })
   }
 }
 
