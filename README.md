@@ -2,7 +2,7 @@
 
 <br/>
 
-**AWS IAM Role Component** ⎯⎯⎯ Easily Deploy AWS Cloudformation templates using [Serverless Components](https://github.com/serverless/components), and pass their outputs to other Serverless Components.
+**AWS CloudFormation Component** ⎯⎯⎯ Easily Deploy AWS Cloudformation templates using [Serverless Components](https://github.com/serverless/components), and pass their outputs to other Serverless Components.
 
 &nbsp;
 
