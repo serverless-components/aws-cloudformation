@@ -1,34 +1,33 @@
-# AWS Cloudformation
+[![Serverless Components](https://s3.amazonaws.com/public.assets.serverless.com/images/readme_serverless_components.gif)](http://serverless.com)
 
-Easily Deploy AWS Cloudformation templates using [Serverless Components](https://github.com/serverless/components), and pass their outputs to other Serverless Components.
+<br/>
+
+**AWS IAM Role Component** ⎯⎯⎯ Easily Deploy AWS Cloudformation templates using [Serverless Components](https://github.com/serverless/components), and pass their outputs to other Serverless Components.
 
 &nbsp;
 
-- [1. Install](#1-install)
-- [2. Create](#2-create)
-- [3. Configure](#3-configure)
-- [4. Deploy](#4-deploy)
-- [New to Components?](#new-to-components)
+1. [**Install**](#1-install)
+2. [**Initialize**](#2-initialize)
+3. [**Configure**](#3-configure)
+4. [**Deploy**](#4-deploy)
+5. [**Remove**](#5-remove)
 
 &nbsp;
 
 ### 1. Install
 
-```console
-$ npm install -g serverless
+```
+npm install -g serverless
 ```
 
-### 2. Create
+### 2. Initialize
 
-Just create a `serverless.yml` file
-
-```shell
-$ touch serverless.yml
-$ touch .env      # your development AWS api keys
-$ touch .env.prod # your production AWS api keys
+```
+serverless init aws-cloudformation
+cd aws-cloudformation-starter
 ```
 
-the `.env` files are not required if you have the aws keys set globally and you want to use a single stage, but they should look like this.
+Then add your AWS credentials to the `.env` file:
 
 ```
 AWS_ACCESS_KEY_ID=XXX
@@ -40,7 +39,7 @@ AWS_SECRET_ACCESS_KEY=XXX
 ```yml
 # serverless.yml
 
-name: my-stack
+name: aws-cloudformation-starter
 component: aws-cloudformation
 
 inputs:
@@ -74,10 +73,18 @@ See [Request Parameters](https://docs.aws.amazon.com/AWSCloudFormation/latest/AP
 
 ### 4. Deploy
 
+You can deploy your stack with the following command:
+
 ```console
-$ serverless deploy
+serverless deploy
 ```
 
-### New to Components?
+Once that is done, you'll see your stack outputs in the CLI, which you could then reference in another component.
 
-Checkout the [Serverless Components](https://github.com/serverless/components) repo for more information.
+### 5. Remove
+
+To remove your entire stack, just run:
+
+```console
+serverless remove
+```
