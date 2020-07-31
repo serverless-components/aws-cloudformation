@@ -38,9 +38,9 @@ AWS_SECRET_ACCESS_KEY=XXX
 
 ### 3. Configure
 
-```yml
-# serverless.yml
+You can configure your component & CloudFormation stack by editing the `serverless.yml` file in the root of the initialized template:
 
+```yml
 name: aws-cloudformation-starter
 component: aws-cloudformation
 
@@ -77,7 +77,7 @@ See [Request Parameters](https://docs.aws.amazon.com/AWSCloudFormation/latest/AP
 
 You can deploy your stack with the following command:
 
-```console
+```
 serverless deploy
 ```
 
@@ -87,6 +87,6 @@ Once that is done, you'll see your stack outputs in the CLI, which you could the
 
 To remove your entire stack, just run:
 
-```console
+```
 serverless remove
 ```
