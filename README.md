@@ -25,7 +25,7 @@ npm install -g serverless
 The easiest way to get started with by initializing the `aws-cloudformation-starter` template. You can do that by running the following command:
 
 ```
-serverless init aws-cloudformation
+serverless init aws-cloudformation-starter
 cd aws-cloudformation-starter
 ```
 
