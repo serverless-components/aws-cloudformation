@@ -1,0 +1,6 @@
+name: aws-cloudformation-starter
+org: serverlessinc
+description: Deploys a CloudFormation template to your AWS account
+keywords: aws, serverless, cloudformation
+repo: https://github.com/serverless-components/aws-cloudformation
+license: MIT
