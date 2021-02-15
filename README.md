@@ -20,6 +20,8 @@
 npm install -g serverless
 ```
 
+After installation, make sure you connect your AWS account by setting a provider in the org setting page on the [Serverless Dashboard](https://app.serverless.com).
+
 ### 2. Initialize
 
 The easiest way to get started with by initializing the `aws-cloudformation-starter` template. You can do that by running the following command:
@@ -27,13 +29,6 @@ The easiest way to get started with by initializing the `aws-cloudformation-star
 ```
 serverless init aws-cloudformation-starter
 cd aws-cloudformation-starter
-```
-
-Then, add your AWS credentials to the `.env` file:
-
-```
-AWS_ACCESS_KEY_ID=XXX
-AWS_SECRET_ACCESS_KEY=XXX
 ```
 
 ### 3. Configure
