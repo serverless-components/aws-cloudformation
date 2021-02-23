@@ -1,5 +1,5 @@
 name: aws-cloudformation
-version: 1.0.0
+version: 1.0.1
 author: eahefnawy
 org: serverlessinc
 description: Deploys a CloudFormation stack to your aws account
@@ -7,3 +7,6 @@ keywords: aws, serverless, express
 repo: https://github.com/serverless-components/aws-cloudformation
 license: MIT
 main: ./src
+types:
+  providers:
+    - aws

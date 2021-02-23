@@ -7,13 +7,6 @@ class CloudFormation extends Component {
    * @param {object} inputs
    */
   async deploy(inputs) {
-    // Check credentials exist
-    if (Object.keys(this.credentials.aws).length === 0) {
-      const msg =
-        'AWS Credentials not found. Make sure you have a .env file in the current working directory. - Docs: https://git.io/JvArp'
-      throw new Error(msg)
-    }
-
     this.state.region = inputs.region || 'us-east-1'
 
     inputs.name = inputs.name || this.name
